@@ -1,0 +1,25 @@
+{
+  "name": "luck_game_distribution",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node build/index.js",
+    "build": "tsc",
+    "dev": "nodemon src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "ethers": "^6.14.1",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.2",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
