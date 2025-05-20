@@ -46,12 +46,37 @@ app.post("/distribute", async (req: Request, res: Response): Promise<void> => {
 
         const adminAddress = await wallet.getAddress();
         const balance = await token.balanceOf(adminAddress);
-        
+
         if (balance < parsedAmount) {
             res.status(403).json({
                 error: "Insufficient token balance",
                 adminBalance: ethers.formatUnits(balance, decimals),
                 required: amountToDistribute,
+            });
+            return;
+        }
+
+        // ✅ Estimate gas
+        const estimatedGas = await token["transfer"].estimateGas(recipient, parsedAmount);
+        
+        // Optionally check if admin has enough ETH to cover gas fees
+        const feeData = await provider.getFeeData();
+        
+        const gasPrice = feeData.gasPrice;
+       
+        if (!gasPrice) {
+            throw new Error("Unable to fetch gas price from provider.");
+        }
+
+        const estimatedFee = estimatedGas * gasPrice;
+        
+        const ethBalance = await provider.getBalance(adminAddress);
+        if (ethBalance < estimatedFee) {
+            res.status(403).json({
+                error: "Insufficient BNB for gas",
+                estimatedGas: estimatedGas.toString(),
+                gasPrice: ethers.formatUnits(gasPrice, "gwei") + " Gwei",
+                requiredEth: ethers.formatEther(estimatedFee),
             });
             return;
         }

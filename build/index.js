@@ -53,6 +53,25 @@ app.post("/distribute", (req, res) => __awaiter(void 0, void 0, void 0, function
             });
             return;
         }
+        // ✅ Estimate gas
+        const estimatedGas = yield token["transfer"].estimateGas(recipient, parsedAmount);
+        // Optionally check if admin has enough ETH to cover gas fees
+        const feeData = yield provider.getFeeData();
+        const gasPrice = feeData.gasPrice;
+        if (!gasPrice) {
+            throw new Error("Unable to fetch gas price from provider.");
+        }
+        const estimatedFee = estimatedGas * gasPrice;
+        const ethBalance = yield provider.getBalance(adminAddress);
+        if (ethBalance < estimatedFee) {
+            res.status(403).json({
+                error: "Insufficient BNB for gas",
+                estimatedGas: estimatedGas.toString(),
+                gasPrice: ethers_1.ethers.formatUnits(gasPrice, "gwei") + " Gwei",
+                requiredEth: ethers_1.ethers.formatEther(estimatedFee),
+            });
+            return;
+        }
         const tx = yield token.transfer(recipient, parsedAmount);
         yield tx.wait();
         res.json({
