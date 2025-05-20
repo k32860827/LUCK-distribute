@@ -22,6 +22,9 @@ app.use(express_1.default.json());
 const provider = new ethers_1.ethers.JsonRpcProvider(process.env.RPC_URL);
 const wallet = new ethers_1.ethers.Wallet(process.env.PRIVATE_KEY, provider);
 const token = new ethers_1.ethers.Contract(process.env.TOKEN_CONTRACT_ADDRESS, abi_1.ERC20_ABI, wallet);
+app.get("/status", (req, res) => {
+    res.status(200).json({ status: "OK", message: "Server is live" });
+});
 app.post("/distribute", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { recipient, value } = req.body;
     if (!recipient || !value) {
@@ -40,6 +43,16 @@ app.post("/distribute", (req, res) => __awaiter(void 0, void 0, void 0, function
         const tokenUnit = value / 100;
         const amountToDistribute = tokenUnit * 0.97;
         const parsedAmount = ethers_1.ethers.parseUnits(amountToDistribute.toFixed(Number(decimals)), decimals);
+        const adminAddress = yield wallet.getAddress();
+        const balance = yield token.balanceOf(adminAddress);
+        if (balance < parsedAmount) {
+            res.status(403).json({
+                error: "Insufficient token balance",
+                adminBalance: ethers_1.ethers.formatUnits(balance, decimals),
+                required: amountToDistribute,
+            });
+            return;
+        }
         const tx = yield token.transfer(recipient, parsedAmount);
         yield tx.wait();
         res.json({

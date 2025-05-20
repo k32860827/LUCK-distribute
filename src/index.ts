@@ -12,11 +12,15 @@ const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
 const token = new ethers.Contract(process.env.TOKEN_CONTRACT_ADDRESS!, ERC20_ABI, wallet);
 
+app.get("/status", (req: Request, res: Response) => {
+    res.status(200).json({ status: "OK", message: "Server is live" });
+});
+
 app.post("/distribute", async (req: Request, res: Response): Promise<void> => {
     const { recipient, value } = req.body;
 
     if (!recipient || !value) {
-         res.status(400).json({
+        res.status(400).json({
             error: "Missing required fields",
             requiredFields: ["recipient", "value"],
         });
@@ -30,14 +34,28 @@ app.post("/distribute", async (req: Request, res: Response): Promise<void> => {
 
     try {
         const decimals = await token.decimals();
-        
+
         const tokenUnit = value / 100;
         const amountToDistribute = tokenUnit * 0.97;
 
         const parsedAmount = ethers.parseUnits(
             amountToDistribute.toFixed(Number(decimals)),
             decimals
-        );        
+        );
+
+
+        const adminAddress = await wallet.getAddress();
+        const balance = await token.balanceOf(adminAddress);
+        
+        if (balance < parsedAmount) {
+            res.status(403).json({
+                error: "Insufficient token balance",
+                adminBalance: ethers.formatUnits(balance, decimals),
+                required: amountToDistribute,
+            });
+            return;
+        }
+
         const tx = await token.transfer(recipient, parsedAmount);
         await tx.wait();
 
