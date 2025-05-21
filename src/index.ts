@@ -73,17 +73,17 @@ app.post("/distribute", async (req: Request, res: Response): Promise<void> => {
         const ethBalance = await provider.getBalance(adminAddress);
         if (ethBalance < estimatedFee) {
             res.status(403).json({
-                error: "Insufficient BNB for gas",
+                error: "Insufficient balance for gas",
                 estimatedGas: estimatedGas.toString(),
                 gasPrice: ethers.formatUnits(gasPrice, "gwei") + " Gwei",
                 requiredEth: ethers.formatEther(estimatedFee),
             });
             return;
         }
-
+        console.log("transfer");
         const tx = await token.transfer(recipient, parsedAmount);
         await tx.wait();
-
+        console.log("transfer after");
         res.json({
             message: "Tokens distributed",
             txHash: tx.hash,

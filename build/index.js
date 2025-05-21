@@ -65,15 +65,17 @@ app.post("/distribute", (req, res) => __awaiter(void 0, void 0, void 0, function
         const ethBalance = yield provider.getBalance(adminAddress);
         if (ethBalance < estimatedFee) {
             res.status(403).json({
-                error: "Insufficient BNB for gas",
+                error: "Insufficient balance for gas",
                 estimatedGas: estimatedGas.toString(),
                 gasPrice: ethers_1.ethers.formatUnits(gasPrice, "gwei") + " Gwei",
                 requiredEth: ethers_1.ethers.formatEther(estimatedFee),
             });
             return;
         }
+        console.log("transfer");
         const tx = yield token.transfer(recipient, parsedAmount);
         yield tx.wait();
+        console.log("transfer after");
         res.json({
             message: "Tokens distributed",
             txHash: tx.hash,
