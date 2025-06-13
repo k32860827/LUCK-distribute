@@ -16,14 +16,36 @@ const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const ethers_1 = require("ethers");
 const abi_1 = require("./abi");
+const path_1 = __importDefault(require("path"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
+// Serve static files (like index.html or APKs)
+app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
 const provider = new ethers_1.ethers.JsonRpcProvider(process.env.RPC_URL);
 const wallet = new ethers_1.ethers.Wallet(process.env.PRIVATE_KEY, provider);
 const token = new ethers_1.ethers.Contract(process.env.TOKEN_CONTRACT_ADDRESS, abi_1.ERC20_ABI, wallet);
 app.get("/status", (req, res) => {
     res.status(200).json({ status: "OK", message: "Server is live" });
+});
+// Endpoint to download the APK
+app.get('/download-apk', (req, res) => {
+    const apkPath = path_1.default.join(__dirname, '../public/CryptoRun.apk');
+    res.download(apkPath, 'CryptoRun.apk', (err) => {
+        if (err) {
+            console.error('Error sending APK:', err);
+            res.status(500).send('Error downloading the APK');
+        }
+    });
+});
+app.get('/download-zip', (req, res) => {
+    const apkPath = path_1.default.join(__dirname, '../public/CryptoRun.zip');
+    res.download(apkPath, 'CryptoRun.zip', (err) => {
+        if (err) {
+            console.error('Error sending ZIP:', err);
+            res.status(500).send('Error downloading the ZIP');
+        }
+    });
 });
 app.post("/distribute", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { recipient, value } = req.body;
